@@ -5,6 +5,7 @@ pipeline {
         IMAGE_NAME = 'devops-pipeline-demo:latest'
         CONTAINER_NAME = 'devops-pipeline-demo'
         PORT = '5000'
+        DOCKER = 'C:\\Users\\saifs\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
     }
 
     stages {
@@ -18,7 +19,6 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Installing Python dependencies...'
-                bat 'python -m pip install --upgrade pip'
                 bat 'python -m pip install -r requirements.txt'
             }
         }
@@ -33,22 +33,22 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                bat 'docker build -t %IMAGE_NAME% .'
+                bat '"%DOCKER%" build -t %IMAGE_NAME% .'
             }
         }
 
         stage('Deploy Container') {
             steps {
                 echo 'Deploying Docker container...'
-                bat 'docker rm -f %CONTAINER_NAME% 2>nul || exit /b 0'
-                bat 'docker run -d --name %CONTAINER_NAME% -p %PORT%:5000 %IMAGE_NAME%'
+                bat '"%DOCKER%" rm -f %CONTAINER_NAME% 2>nul || exit /b 0'
+                bat '"%DOCKER%" run -d --name %CONTAINER_NAME% -p %PORT%:5000 %IMAGE_NAME%'
             }
         }
 
         stage('Verify Deployment') {
             steps {
                 echo 'Checking application health...'
-                bat 'powershell -Command "Start-Sleep -Seconds 5; $r = Invoke-RestMethod -Uri http://localhost:5000/health; Write-Host ($r | ConvertTo-Json -Compress); if ($r.status -ne ''healthy'') { exit 1 }"'
+                bat 'powershell -NoProfile -Command "Start-Sleep -Seconds 5; $r = Invoke-RestMethod -Uri http://localhost:5000/health; if ($r.status -ne \\"healthy\\") { exit 1 }; $r | ConvertTo-Json -Compress"'
             }
         }
     }
